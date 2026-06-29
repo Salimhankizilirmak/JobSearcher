@@ -1,6 +1,9 @@
-import { put, head } from '@vercel/blob';
+import { put } from '@vercel/blob';
 import { NextResponse } from 'next/server';
 
+// Store the blob's public URL in memory for the lifetime of the serverless instance
+// (as a fallback when head() is not available)
+let cachedBlobUrl = null;
 const BLOB_FILENAME = 'novexis_state.json';
 
 export async function POST(request) {
@@ -18,7 +21,11 @@ export async function POST(request) {
       contentType: 'application/json'
     });
 
+    // Cache the public URL for subsequent GET requests
+    cachedBlobUrl = blob.url;
+
     console.log('[API Sync] Veriler Vercel Blob\'a başarıyla yazıldı:', blob.url);
+    // Return the public URL so the frontend can fetch directly
     return NextResponse.json({ success: true, url: blob.url });
   } catch (error) {
     console.error('[API Sync] Senkronizasyon hatası:', error.message);
@@ -28,11 +35,24 @@ export async function POST(request) {
 
 export async function GET() {
   try {
-    // Use head() to directly get the blob metadata and public URL without listing
-    const blobMeta = await head(BLOB_FILENAME);
+    // Try to construct the public blob URL directly - Vercel Blob uses a predictable URL pattern
+    // Format: https://<store-id>.public.blob.vercel-storage.com/<filename>
+    // We get the store domain from env or from cached URL
+    let blobUrl = cachedBlobUrl;
 
-    if (!blobMeta || !blobMeta.url) {
-      console.log('[API Sync] Blob dosyası henüz oluşturulmamış.');
+    // If no cached URL, try to build it from BLOB_READ_WRITE_TOKEN (contains store name)
+    if (!blobUrl) {
+      const token = process.env.BLOB_READ_WRITE_TOKEN || '';
+      // token format: vercel_blob_rw_<storeId>_<secret>
+      const match = token.match(/vercel_blob_rw_([^_]+)_/);
+      if (match) {
+        const storeId = match[1].toLowerCase();
+        blobUrl = `https://${storeId}.public.blob.vercel-storage.com/${BLOB_FILENAME}`;
+      }
+    }
+
+    if (!blobUrl) {
+      console.log('[API Sync] Blob URL henüz belirlenmedi, boş veri döndürülüyor.');
       return NextResponse.json({
         companies: [],
         jobs: [],
@@ -42,7 +62,7 @@ export async function GET() {
     }
 
     // Fetch the JSON payload directly from the public blob URL with cache busting
-    const response = await fetch(`${blobMeta.url}?t=${Date.now()}`, {
+    const response = await fetch(`${blobUrl}?t=${Date.now()}`, {
       cache: 'no-store'
     });
 
@@ -54,7 +74,6 @@ export async function GET() {
     return NextResponse.json(data);
   } catch (error) {
     console.error('[API Sync] Veri çekme hatası:', error.message);
-    // Return empty state instead of error so frontend doesn't fall to mock
     return NextResponse.json({
       companies: [],
       jobs: [],
