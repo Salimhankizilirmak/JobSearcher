@@ -1,9 +1,6 @@
-import { put } from '@vercel/blob';
+import { put, list } from '@vercel/blob';
 import { NextResponse } from 'next/server';
 
-// Store the blob's public URL in memory for the lifetime of the serverless instance
-// (as a fallback when head() is not available)
-let cachedBlobUrl = null;
 const BLOB_FILENAME = 'novexis_state.json';
 
 export async function POST(request) {
@@ -21,11 +18,7 @@ export async function POST(request) {
       contentType: 'application/json'
     });
 
-    // Cache the public URL for subsequent GET requests
-    cachedBlobUrl = blob.url;
-
     console.log('[API Sync] Veriler Vercel Blob\'a başarıyla yazıldı:', blob.url);
-    // Return the public URL so the frontend can fetch directly
     return NextResponse.json({ success: true, url: blob.url });
   } catch (error) {
     console.error('[API Sync] Senkronizasyon hatası:', error.message);
@@ -35,31 +28,12 @@ export async function POST(request) {
 
 export async function GET() {
   try {
-    // Try to construct the public blob URL directly - Vercel Blob uses a predictable URL pattern
-    // Format: https://<store-id>.public.blob.vercel-storage.com/<filename>
-    // We get the store domain from env or from cached URL
-    let blobUrl = cachedBlobUrl;
+    // List blobs to find the correct, Vercel-generated URL of novexis_state.json
+    const { blobs } = await list();
+    const stateBlob = blobs.find(b => b.pathname === BLOB_FILENAME);
 
-    // Use BLOB_STORE_ID (already in env) to build the public URL directly
-    if (!blobUrl) {
-      const storeId = process.env.BLOB_STORE_ID || '';
-      if (storeId) {
-        blobUrl = `https://${storeId}.public.blob.vercel-storage.com/${BLOB_FILENAME}`;
-      }
-    }
-
-    // Fallback: try to parse from BLOB_READ_WRITE_TOKEN if available
-    if (!blobUrl) {
-      const token = process.env.BLOB_READ_WRITE_TOKEN || '';
-      const match = token.match(/vercel_blob_rw_([^_]+)_/i);
-      if (match) {
-        const storeId = match[1].toLowerCase();
-        blobUrl = `https://${storeId}.public.blob.vercel-storage.com/${BLOB_FILENAME}`;
-      }
-    }
-
-    if (!blobUrl) {
-      console.log('[API Sync] Blob URL henüz belirlenmedi, boş veri döndürülüyor.');
+    if (!stateBlob || !stateBlob.url) {
+      console.log('[API Sync] Blob dosyası henüz oluşturulmamış.');
       return NextResponse.json({
         companies: [],
         jobs: [],
@@ -69,7 +43,7 @@ export async function GET() {
     }
 
     // Fetch the JSON payload directly from the public blob URL with cache busting
-    const response = await fetch(`${blobUrl}?t=${Date.now()}`, {
+    const response = await fetch(`${stateBlob.url}?t=${Date.now()}`, {
       cache: 'no-store'
     });
 
