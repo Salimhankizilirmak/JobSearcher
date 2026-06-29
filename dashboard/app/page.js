@@ -30,14 +30,19 @@ export default function Dashboard() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/sync');
+      const res = await fetch('/api/sync', { cache: 'no-store' });
       if (res.ok) {
         const json = await res.json();
-        if (json.jobs && json.jobs.length > 0) {
-          setData(json);
-        } else {
-          // Use realistic mock data if Vercel KV is not yet connected or has no records
+        // Only use mock data if there is a genuine API error - never when data is just empty
+        if (json.error) {
           useMockData();
+        } else {
+          setData({
+            companies: json.companies || [],
+            jobs: json.jobs || [],
+            outreachLogs: json.outreachLogs || [],
+            lastSyncedAt: json.lastSyncedAt || null
+          });
         }
       } else {
         useMockData();
