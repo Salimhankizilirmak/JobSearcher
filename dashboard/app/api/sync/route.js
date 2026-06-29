@@ -11,9 +11,9 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Geçersiz senkronizasyon verisi.' }, { status: 400 });
     }
 
-    // Overwrite novexis_state.json in Vercel Blob
+    // Overwrite novexis_state.json in Vercel Blob with private access
     const blob = await put(BLOB_FILENAME, JSON.stringify(data), {
-      access: 'public',
+      access: 'private',
       addRandomSuffix: false,
       contentType: 'application/json'
     });
