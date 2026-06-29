@@ -115,7 +115,7 @@ export async function sendOutreachEmail(job, companyEmail) {
   });
 
   // 3. Send report email to Salimhan
-  const salimhanEmail = 'salimhankizilirmak@gmail.com';
+  const salimhanEmail = 'salimhankizil@gmail.com';
   const reportSubject = `[Outreach Raporu] ${job.title} - ${pitch.project}`;
   const reportBody = `
 Salimhan Merhaba,
