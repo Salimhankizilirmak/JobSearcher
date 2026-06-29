@@ -1,23 +1,22 @@
-import { kv } from '@vercel/kv';
+import { put, list } from '@vercel/blob';
 import { NextResponse } from 'next/server';
 
 export async function POST(request) {
   try {
     const data = await request.json();
 
-    // Validate request structure
     if (!data.companies || !data.jobs || !data.outreachLogs) {
       return NextResponse.json({ error: 'Geçersiz senkronizasyon verisi.' }, { status: 400 });
     }
 
-    // Save payload components directly to Vercel KV (Redis)
-    await kv.set('novexis:companies', data.companies);
-    await kv.set('novexis:jobs', data.jobs);
-    await kv.set('novexis:outreachLogs', data.outreachLogs);
-    await kv.set('novexis:lastSyncedAt', data.lastSyncedAt || new Date().toISOString());
+    // Save/Overwrite the JSON file in Vercel Blob with addRandomSuffix: false
+    const blob = await put('novexis_state.json', JSON.stringify(data), {
+      access: 'public',
+      addRandomSuffix: false
+    });
 
-    console.log('[API Sync] Veriler Vercel KV\'ye başarıyla yazıldı.');
-    return NextResponse.json({ success: true, message: 'Senkronizasyon başarılı.' });
+    console.log('[API Sync] Veriler Vercel Blob\'a başarıyla yazıldı:', blob.url);
+    return NextResponse.json({ success: true, url: blob.url });
   } catch (error) {
     console.error('[API Sync] Senkronizasyon hatası:', error.message);
     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -26,18 +25,30 @@ export async function POST(request) {
 
 export async function GET() {
   try {
-    const companies = await kv.get('novexis:companies') || [];
-    const jobs = await kv.get('novexis:jobs') || [];
-    const outreachLogs = await kv.get('novexis:outreachLogs') || [];
-    const lastSyncedAt = await kv.get('novexis:lastSyncedAt') || null;
+    // List blobs to locate novexis_state.json
+    const { blobs } = await list();
+    const stateBlob = blobs.find(b => b.pathname === 'novexis_state.json');
 
-    return NextResponse.json({
-      companies,
-      jobs,
-      outreachLogs,
-      lastSyncedAt
-    });
+    if (!stateBlob) {
+      console.log('[API Sync] Henüz senkronize edilmiş veri dosyası bulunamadı.');
+      return NextResponse.json({
+        companies: [],
+        jobs: [],
+        outreachLogs: [],
+        lastSyncedAt: null
+      });
+    }
+
+    // Fetch the JSON payload directly from the public blob URL
+    const response = await fetch(stateBlob.url);
+    if (!response.ok) {
+      throw new Error(`Blob içeriği okunamadı. HTTP: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    return NextResponse.json(data);
   } catch (error) {
+    console.error('[API Sync] Veri çekme hatası:', error.message);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
