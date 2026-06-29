@@ -1,0 +1,18 @@
+{
+  "name": "novexis-lead-outreach-engine",
+  "version": "1.0.0",
+  "description": "Novexis Tech B2B Hot-Lead Outreach Engine",
+  "type": "module",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "db:init": "node db/initDb.js",
+    "setup:startup": "node setup-startup.js"
+  },
+  "dependencies": {
+    "sqlite3": "^5.1.7",
+    "puppeteer": "^22.12.1",
+    "dotenv": "^16.4.5",
+    "nodemailer": "^6.9.14"
+  }
+}
