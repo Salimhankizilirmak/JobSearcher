@@ -40,11 +40,18 @@ export async function GET() {
     // We get the store domain from env or from cached URL
     let blobUrl = cachedBlobUrl;
 
-    // If no cached URL, try to build it from BLOB_READ_WRITE_TOKEN (contains store name)
+    // Use BLOB_STORE_ID (already in env) to build the public URL directly
+    if (!blobUrl) {
+      const storeId = process.env.BLOB_STORE_ID || '';
+      if (storeId) {
+        blobUrl = `https://${storeId}.public.blob.vercel-storage.com/${BLOB_FILENAME}`;
+      }
+    }
+
+    // Fallback: try to parse from BLOB_READ_WRITE_TOKEN if available
     if (!blobUrl) {
       const token = process.env.BLOB_READ_WRITE_TOKEN || '';
-      // token format: vercel_blob_rw_<storeId>_<secret>
-      const match = token.match(/vercel_blob_rw_([^_]+)_/);
+      const match = token.match(/vercel_blob_rw_([^_]+)_/i);
       if (match) {
         const storeId = match[1].toLowerCase();
         blobUrl = `https://${storeId}.public.blob.vercel-storage.com/${BLOB_FILENAME}`;
