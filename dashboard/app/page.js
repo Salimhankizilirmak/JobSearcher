@@ -80,24 +80,29 @@ export default function Dashboard() {
   }, []);
 
   // Filter logic
-  const filteredJobs = data.jobs.filter(job => {
-    const matchesSearch = (job.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                           job.companyName.toLowerCase().includes(searchTerm.toLowerCase()));
+  const filteredJobs = (data.jobs || []).filter(job => {
+    const title = job.title || '';
+    const companyName = job.companyName || '';
+    const matchesSearch = (title.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                           companyName.toLowerCase().includes(searchTerm.toLowerCase()));
     const matchesStatus = statusFilter === 'All' || job.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
 
-  const filteredLogs = data.outreachLogs.filter(log => {
-    return (log.jobTitle.toLowerCase().includes(searchTerm.toLowerCase()) || 
-            log.companyName.toLowerCase().includes(searchTerm.toLowerCase()) || 
-            log.email_sent_to.toLowerCase().includes(searchTerm.toLowerCase()));
+  const filteredLogs = (data.outreachLogs || []).filter(log => {
+    const jobTitle = log.jobTitle || '';
+    const companyName = log.companyName || '';
+    const emailSentTo = log.email_sent_to || '';
+    return (jobTitle.toLowerCase().includes(searchTerm.toLowerCase()) || 
+            companyName.toLowerCase().includes(searchTerm.toLowerCase()) || 
+            emailSentTo.toLowerCase().includes(searchTerm.toLowerCase()));
   });
 
   // Metric computations
-  const totalJobs = data.jobs.length;
-  const sentOutreachCount = data.outreachLogs.length;
-  const pendingManualCount = data.jobs.filter(j => j.status === 'Manuel İnceleme Bekliyor').length;
-  const totalCompanies = data.companies.length;
+  const totalJobs = (data.jobs || []).length;
+  const sentOutreachCount = (data.outreachLogs || []).length;
+  const pendingManualCount = (data.jobs || []).filter(j => j && j.status === 'Manuel İnceleme Bekliyor').length;
+  const totalCompanies = (data.companies || []).length;
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans p-6 md:p-12 relative overflow-hidden">
