@@ -26,6 +26,7 @@ export default function Dashboard() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
   const [activeTab, setActiveTab] = useState('jobs'); // 'jobs' or 'logs'
+  const [selectedLog, setSelectedLog] = useState(null);
 
   const fetchData = async () => {
     setLoading(true);
@@ -68,8 +69,22 @@ export default function Dashboard() {
         { id: 4, companyName: 'Hopi', title: 'Senior Full-Stack Engineer', platform: 'LinkedIn', status: 'Manuel İnceleme Bekliyor', created_at: new Date(Date.now() - 14400000).toISOString() }
       ],
       outreachLogs: [
-        { id: 1, companyName: 'Novexis Tech', jobTitle: 'Senior Node.js Developer', email_sent_to: 'info@novexistech.com', sent_at: new Date(Date.now() - 3600000).toISOString() },
-        { id: 2, companyName: 'AdCubes', jobTitle: 'Full Stack / AI Engineer', email_sent_to: 'info@adcubes.com', sent_at: new Date(Date.now() - 7200000).toISOString() }
+        { 
+          id: 1, 
+          companyName: 'Novexis Tech', 
+          jobTitle: 'Senior Node.js Developer', 
+          email_sent_to: 'info@novexistech.com', 
+          pitch_body: `Merhaba Teknik Ekip Lideri,\n\nNovexis Tech bünyesinde açmış olduğunuz AWS ve Lambda odaklı backend ilanınızı doğrudan radarımıza aldık. Bu alanda kıdemli mühendis bulmanın ve onboard etmenin operasyonel hızınızı ne kadar yavaşlattığının farkındayız.\n\nNovexis Tech olarak sadece bulut mimarileri geliştirmekle kalmıyor; halihazırda Çorum OSB'de aktif olarak 6'dan fazla büyük kurumsal firmaya ve 20'den fazla işletmeye uçtan uca teknoloji, üretim takip ve yazılım altyapısı hizmeti sağlıyoruz.\n\nİlanı açmanıza sebep olan teknik darboğazları hafifletmek ve ürün teslim hızınızı artırmak adına önümüzdeki hafta 10 dakikalık kısa bir teknik tanışma toplantısı organize edebilir miyiz?\n\nSaygılarımla,\nSalimhan Kızılırmak - Kurucu Ortak, Novexis Tech`,
+          sent_at: new Date(Date.now() - 3600000).toISOString() 
+        },
+        { 
+          id: 2, 
+          companyName: 'AdCubes', 
+          jobTitle: 'Full Stack / AI Engineer', 
+          email_sent_to: 'info@adcubes.com', 
+          pitch_body: `Merhaba Teknik Ekip Lideri,\n\nAdCubes bünyesinde açmış olduğunuz SaaS ve veritabanı odaklı backend ilanınızı ilgiyle inceledik. Modern SaaS mimarilerinde veri tabanı ölçeklenebilirliği, çoklu kiracılık (multi-tenancy) yönetimi ve güvenli kimlik doğrulama adımlarının kurulmasının geliştirme takvimlerini ne kadar sıkıştırdığının farkındayız.\n\nNovexis Tech olarak sadece bulut mimarileri geliştirmekle kalmıyor; halihazırda Çorum OSB'de aktif olarak 6'dan fazla büyük kurumsal firmaya ve 20'den fazla işletmeye uçtan uca teknoloji, üretim takip ve yazılım altyapısı hizmeti sağlıyoruz.\n\nİlanı açmanıza sebep olan teknik zorlukları aşmak ve ürününüzü pazara sunma hızınızı artırmak adına önümüzdeki hafta 10 dakikalık kısa bir teknik tanışma toplantısı organize edebilir miyiz?\n\nSaygılarımla,\nSalimhan Kızılırmak - Kurucu Ortak, Novexis Tech`,
+          sent_at: new Date(Date.now() - 7200000).toISOString() 
+        }
       ],
       lastSyncedAt: new Date().toISOString()
     });
@@ -313,7 +328,11 @@ export default function Dashboard() {
                     </tr>
                   ) : (
                     filteredLogs.map(log => (
-                      <tr key={log.id} className="hover:bg-slate-800/10">
+                      <tr 
+                        key={log.id} 
+                        className="hover:bg-slate-800/20 cursor-pointer transition"
+                        onClick={() => setSelectedLog(log)}
+                      >
                         <td className="px-6 py-4">
                           <div className="font-semibold text-slate-100">{log.companyName}</div>
                           <div className="text-xs text-slate-400 mt-0.5">{log.jobTitle}</div>
@@ -325,9 +344,9 @@ export default function Dashboard() {
                           {new Date(log.sent_at).toLocaleString()}
                         </td>
                         <td className="px-6 py-4 text-right">
-                          <span className="inline-flex items-center gap-1 text-xs text-emerald-400 font-semibold bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-full">
-                            <CheckCircle className="w-3.5 h-3.5" />
-                            Gönderildi
+                          <span className="inline-flex items-center gap-1.5 text-xs text-indigo-400 hover:text-indigo-300 font-semibold bg-indigo-500/10 border border-indigo-500/20 px-3 py-1 rounded-full">
+                            <Mail className="w-3.5 h-3.5" />
+                            Detayları Gör
                           </span>
                         </td>
                       </tr>
@@ -341,6 +360,67 @@ export default function Dashboard() {
         </div>
 
       </div>
+
+      {/* Email Client Detail Modal */}
+      {selectedLog && (
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-fade-in">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-3xl overflow-hidden shadow-2xl flex flex-col max-h-[85vh]">
+            
+            {/* Modal Header (Email Client Header Style) */}
+            <div className="p-5 border-b border-slate-800 flex justify-between items-center bg-slate-950/40">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-indigo-600/10 rounded-lg text-indigo-400">
+                  <Mail className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-100">Giden E-Posta Detayı</h3>
+                  <p className="text-xs text-slate-400 mt-0.5">{selectedLog.companyName} &bull; {selectedLog.jobTitle}</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setSelectedLog(null)}
+                className="text-slate-400 hover:text-slate-200 text-sm font-semibold bg-slate-800/40 hover:bg-slate-800 px-3 py-1.5 rounded-lg transition"
+              >
+                Kapat
+              </button>
+            </div>
+
+            {/* Email Envelope Header */}
+            <div className="p-6 bg-slate-900/50 border-b border-slate-800 space-y-2 text-sm text-slate-300">
+              <div>
+                <span className="text-slate-500 inline-block w-16">Kimden:</span>
+                <strong className="text-slate-200 font-mono">novexistech@gmail.com</strong>
+              </div>
+              <div>
+                <span className="text-slate-500 inline-block w-16">Kime:</span>
+                <strong className="text-slate-200 font-mono">{selectedLog.email_sent_to}</strong>
+              </div>
+              <div>
+                <span className="text-slate-500 inline-block w-16">Tarih:</span>
+                <span className="text-slate-400">{new Date(selectedLog.sent_at).toLocaleString()}</span>
+              </div>
+              <div>
+                <span className="text-slate-500 inline-block w-16">Konu:</span>
+                <strong className="text-slate-100 bg-slate-950/50 px-2 py-0.5 rounded border border-slate-800 inline-block">
+                  {selectedLog.jobTitle} - B2B Outreach Teklifi
+                </strong>
+              </div>
+            </div>
+
+            {/* Email Body Content */}
+            <div className="p-6 overflow-y-auto flex-1 bg-slate-950/40 text-slate-300 leading-relaxed font-sans text-sm whitespace-pre-wrap selection:bg-indigo-500/30">
+              {selectedLog.pitch_body}
+            </div>
+
+            {/* Footer */}
+            <div className="p-4 border-t border-slate-800 bg-slate-950/20 text-center text-xs text-slate-500">
+              Bu teklif SMTP entegrasyonu ile otomatik olarak gönderilmiştir.
+            </div>
+
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

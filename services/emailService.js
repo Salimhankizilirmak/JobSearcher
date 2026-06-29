@@ -114,34 +114,8 @@ export async function sendOutreachEmail(job, companyEmail) {
     text: pitch.body,
   });
 
-  // 3. Send report email to Salimhan
-  const salimhanEmail = 'salimhankizil@gmail.com';
-  const reportSubject = `[Outreach Raporu] ${job.title} - ${pitch.project}`;
-  const reportBody = `
-Salimhan Merhaba,
-Yeni bir B2B outreach e-postası başarıyla gönderildi.
-
-İşlem Detayları:
-- Firma Adı: ${job.companyName || 'Bilinmeyen Firma'}
-- İlan Başlığı: ${job.title}
-- Alıcı: ${companyEmail}
-- Gönderilen Proje: ${pitch.project}
-- Dil: ${language}
-- E-posta Konusu: ${pitch.subject}
-- E-posta Gövdesi:
----
-${pitch.body}
----
-Bu işlem veritabanına kaydedildi.
-  `;
-
-  console.log(`[SMTP] Salimhan Kızılırmak'a rapor e-postası gönderiliyor...`);
-  await transporter.sendMail({
-    from: config.smtp.from,
-    to: salimhanEmail,
-    subject: reportSubject,
-    text: reportBody,
-  });
+  // 3. Report email sending is disabled as requested (can be viewed on Dashboard)
+  console.log(`[SMTP] Salimhan'a rapor e-postası gönderimi pas geçildi (Arayüzden takip edilebilir).`);
 
   // 4. Log outreach to SQLite
   await db.run(
